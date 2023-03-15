@@ -167,7 +167,7 @@ body {
 .modaly {
   position: fixed;
   left: 0;
-  top: -510px;
+  top: -75px;
   right: -110px;
   bottom: 0;
   display: flex;
