@@ -8,6 +8,7 @@ import PageButton from "./components/PageButton";
 import ConnectButton from "./components/ConnectButton";
 import ConfigModal from "./components/ConfigModal";
 import CurrencyField from "./components/CurrencyField.jsx";
+import { getPrice, getUniContract, getWethContract, runSwap } from "./helpers";
 
 function App() {
   const [provider, setProvider] = useState(undefined);
@@ -30,8 +31,15 @@ function App() {
 
   useEffect(() => {
     const onLoad = async () => {
+      //connect your wallet to hardhat network (with mainnet fork)
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       setProvider(provider);
+
+      const wethContract = getWethContract();
+      setWethContract(wethContract);
+
+      const uniContract = getUniContract();
+      setUniContract(uniContract);
     };
 
     onLoad();
@@ -45,18 +53,45 @@ function App() {
 
   const isConnected = () => signer !== undefined && signerAddress !== undefined;
 
-  const getWalletAddress = () => {
-    signer
-      .getAddress()
-      .then((address) => setSignerAddress(address))
-      .catch((err) => console.log(`setSignerAddress: `, err));
+  const getWalletAddress = async () => {
+    try {
+      const address = await signer.getAddress();
+      setSignerAddress(address);
+      console.log({ address });
+      const _ethBalance = ethers.utils.formatEther(
+        await wethContract.balanceOf(address)
+      );
+      setWethAmount(parseFloat(_ethBalance));
+      const _uniBalance = ethers.utils.formatEther(
+        await uniContract.balanceOf(address)
+      );
+      setUniAmount(parseFloat(_uniBalance));
+    } catch (error) {
+      console.log(`getWalletAddress: `, error);
+    }
   };
 
   useEffect(() => {
     signer && getWalletAddress();
   }, [signer]);
 
-  const getSwapPrice = (inputAmount) => {};
+  const getSwapPrice = (inputAmount) => {
+    setLoading(true);
+    setInputAmount(inputAmount);
+    getPrice(
+      inputAmount,
+      slippageAmount,
+      Math.floor(Date.now() / 1000) + deadlineMinutes * 60,
+      signerAddress
+    )
+      .then((data) => {
+        setTransaction(data[0]);
+        setOutputAmount(data[1]);
+        setRatio(data[2]);
+        setLoading(false);
+      })
+      .catch((err) => console.log("getSwapPrice :", err));
+  };
 
   return (
     <div className="App">
@@ -126,7 +161,10 @@ function App() {
 
           <div className="swapButtonContainer">
             {isConnected() ? (
-              <div onClick={() => {}} className="swapButton">
+              <div
+                onClick={() => runSwap(transaction, signer)}
+                className="swapButton"
+              >
                 Swap
               </div>
             ) : (
