@@ -1,6 +1,10 @@
 const { ethers, BigNumber } = require("ethers");
 
-const { AlphaRouter } = require("@uniswap/smart-order-router");
+const {
+  AlphaRouter,
+  ChainId,
+  SwapType,
+} = require("@uniswap/smart-order-router");
 const {
   Token,
   CurrencyAmount,
@@ -17,7 +21,7 @@ export const _provider = new ethers.providers.JsonRpcProvider(
   "http://127.0.0.1:8545/"
 );
 
-const chainId = 1;
+const chainId = ChainId.MAINNET;
 const name0 = "Wrapped Ether";
 const symbol0 = "WETH";
 const decimals0 = 18;
@@ -58,6 +62,7 @@ export const getPrice = async (
         recipient: walletAddress,
         slippageTolerance: percentSlippage,
         deadline: deadline,
+        type: SwapType.SWAP_ROUTER_02,
       }
     );
     console.log("*** after ***");
